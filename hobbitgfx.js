@@ -25,11 +25,15 @@ var ink = [0];
 var paper = [0];
 var timer;
 
-function run(n, delay = 10) {
+var currentScene = 0;
+var renderInterval = 10;
+
+function run(n = currentScene) {
+    currentScene = n;
     var canvas = document.getElementById("gfx");
     var ctx = canvas.getContext("2d");
 
-    var border = draw(gfxdata[n], ctx, delay);
+    var border = draw(gfxdata[n], ctx, renderInterval);
     canvas.style.borderColor = colors[border];
 }
 
