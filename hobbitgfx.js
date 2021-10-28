@@ -23,14 +23,14 @@ var colors = ["#000000", // 0: black
 var bits = [0];
 var ink = [0];
 var paper = [0];
+var timer;
 
-function run(n) {
+function run(n, delay = 10) {
     var canvas = document.getElementById("gfx");
     var ctx = canvas.getContext("2d");
-    clear(7, 0);
-    var border = draw(gfxdata[n], ctx);
+
+    var border = draw(gfxdata[n], ctx, delay);
     canvas.style.borderColor = colors[border];
-    refresh(ctx);
 }
 
 function clear(bg, fg) {
@@ -62,7 +62,12 @@ function refresh(ctx) {
 // 0x20-0x3F H L N+: paint background
 // 00: stop
 
-function draw(data, ctx) {
+function draw(data, ctx, delay = 10) {
+    if (timer)
+    {
+        clearInterval(timer);
+        timer = null;
+    }
     var pc = 0;
     // the first two bytes of graphics data are the border colour
     // and initial background+foreground colours
@@ -76,33 +81,55 @@ function draw(data, ctx) {
     var y = 0;
     var c = 0;
 
-    while (op = data[pc++], op != 0) {
-       if (op == 8) {
-           x = data[pc++];
-           y = 127 - data[pc++];
-           drawpixel(x, y, c);
-       } else if (op > 0x7f) {
-           var v = drawline(x, y, c,
-                            (op & 0x07),
-                            (data[pc] & 0x3f),
-                            (((op & 0x78) >> 1) + ((data[pc] & 0xc0) >> 6))
-                           );
-           x = v[0];
-           y = v[1];
-           ++pc;
-       } else if (op > 0x3f) {
-           var fx = data[pc++];
-           var fy = 127 - data[pc++];
-           areafill(fx, fy, op & 0x07);
-       } else if (op > 0x1f) {
-           var H = data[pc++];
-           var L = data[pc++];
-           var a = (H*256+L)-0x5800;
-           for (var d; d = data[pc++], d != 0xff;) {
-               a = paintbg(a, op & 0x07, d & 0x03, (d & 0xfc) >> 2);
-           }
-       }
+    function step()
+    {
+        var op = data[pc++];
+        if (!op)
+            return false;
+        
+        if (op == 8) {
+            x = data[pc++];
+            y = 127 - data[pc++];
+            drawpixel(x, y, c);
+        } else if (op > 0x7f) {
+            var v = drawline(x, y, c,
+                                (op & 0x07),
+                                (data[pc] & 0x3f),
+                                (((op & 0x78) >> 1) + ((data[pc] & 0xc0) >> 6))
+                            );
+            x = v[0];
+            y = v[1];
+            ++pc;
+        } else if (op > 0x3f) {
+            var fx = data[pc++];
+            var fy = 127 - data[pc++];
+            areafill(fx, fy, op & 0x07);
+        } else if (op > 0x1f) {
+            var H = data[pc++];
+            var L = data[pc++];
+            var a = (H*256+L)-0x5800;
+            for (var d; d = data[pc++], d != 0xff;) {
+                a = paintbg(a, op & 0x07, d & 0x03, (d & 0xfc) >> 2);
+            }
+        }
+    
+        return true;
     }
+
+    if (!delay)
+    {
+        while (step());
+        refresh(ctx);
+    }
+    else
+    {
+        timer = setInterval(()=>{
+            if (!step())
+                clearInterval(timer);
+            refresh(ctx);
+        }, delay);
+    }
+    
     return border;
 }
 

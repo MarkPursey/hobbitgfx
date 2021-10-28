@@ -6,7 +6,7 @@
 <h1>The Hobbit graphics engine in Javascript</h1>
 
 <select name="sel1"
-        onchange="run(this.selectedIndex);">
+        onchange="currentScene = this.selectedIndex; run(currentScene, delay);">
 <option>Tunnel like hall</option>
 <option>Great river</option>
 <option>Trolls' path</option>
@@ -30,11 +30,23 @@
 <option>Spider place</option>
 <option>Front gate</option>
 </select>
+
+<select name="speed"
+        onchange="delay=Math.pow(4, this.selectedIndex) * 10; run(currentScene, delay);">
+        <option>Fast</option>
+        <option>Slow</option>
+        <option>Very Slow</option>
+</select>
+
 <p>
-<canvas id="gfx" width="256" height="128"
+<canvas id="gfx" width="256" height="128" style="width:100%"
  style="border:16px solid #000000;">
 </canvas>
 
 <script src="hobbitgfx.js">Script? What script?</script>
+<script>
+        var currentScene = 0;
+        var delay = 0;
+</script>
 </body>
 </html>
